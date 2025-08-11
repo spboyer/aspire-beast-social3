@@ -1,0 +1,285 @@
+﻿@page "/"
+@using SocialContentCreator.Web.Services
+@inject ContentManagementService ContentService
+@inject SocialMediaContentService SocialService
+
+<PageTitle>Dashboard - Beast Social Creator</PageTitle>
+
+<!-- Welcome Header -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Welcome back!</h1>
+            <p class="text-gray-600 mt-1">Here's what's happening with your social media content today.</p>
+        </div>
+        <div class="flex space-x-3">
+            <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                <i class="fas fa-plus mr-2"></i>
+                Create Content
+            </button>
+            <button class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                <i class="fas fa-calendar mr-2"></i>
+                Schedule Post
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Posts</p>
+                <p class="text-2xl font-bold text-gray-900">@totalPosts</p>
+            </div>
+            <div class="bg-blue-100 p-3 rounded-lg">
+                <i class="fas fa-file-alt text-blue-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm">
+            <span class="text-green-600 font-medium">+12%</span>
+            <span class="text-gray-600 ml-2">from last month</span>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Engagement Rate</p>
+                <p class="text-2xl font-bold text-gray-900">4.8%</p>
+            </div>
+            <div class="bg-green-100 p-3 rounded-lg">
+                <i class="fas fa-heart text-green-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm">
+            <span class="text-green-600 font-medium">+0.3%</span>
+            <span class="text-gray-600 ml-2">from last week</span>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Scheduled Posts</p>
+                <p class="text-2xl font-bold text-gray-900">@scheduledPosts</p>
+            </div>
+            <div class="bg-purple-100 p-3 rounded-lg">
+                <i class="fas fa-clock text-purple-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm">
+            <span class="text-blue-600 font-medium">Next in 2h</span>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Active Platforms</p>
+                <p class="text-2xl font-bold text-gray-900">@activePlatforms</p>
+            </div>
+            <div class="bg-orange-100 p-3 rounded-lg">
+                <i class="fas fa-share-alt text-orange-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm">
+            <span class="text-gray-600">Twitter, LinkedIn, Facebook</span>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Recent Content -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900">Recent Content</h2>
+                    <button class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+                        View All
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                @if (recentContent?.Any() == true)
+                {
+                    <div class="space-y-4">
+                        @foreach (var content in recentContent.Take(5))
+                        {
+                            <div class="flex items-start space-x-4 p-4 hover:bg-gray-50 rounded-lg transition-colors">
+                                <div class="bg-gray-100 p-2 rounded-lg">
+                                    <i class="fas fa-file-text text-gray-600"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-medium text-gray-900 truncate">@content.Title</h3>
+                                    <p class="text-sm text-gray-600 mt-1 line-clamp-2">@content.Summary</p>
+                                    <div class="flex items-center mt-2 text-xs text-gray-500">
+                                        <span>@content.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                        <span class="mx-2">•</span>
+                                        <span class="@GetStatusColor("published")">Published</span>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                                        <i class="fas fa-edit text-sm"></i>
+                                    </button>
+                                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                                        <i class="fas fa-share text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-8">
+                        <i class="fas fa-file-alt text-4xl text-gray-300 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No content yet</h3>
+                        <p class="text-gray-600 mb-4">Start creating amazing social media content!</p>
+                        <button class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            Create Your First Post
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="space-y-6">
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <div class="space-y-3">
+                <button class="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                    <div class="flex items-center">
+                        <i class="fas fa-link text-blue-600 mr-3"></i>
+                        <span class="font-medium">Import from URL</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+                <button class="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                    <div class="flex items-center">
+                        <i class="fas fa-file-upload text-green-600 mr-3"></i>
+                        <span class="font-medium">Upload Document</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+                <button class="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                    <div class="flex items-center">
+                        <i class="fas fa-magic text-purple-600 mr-3"></i>
+                        <span class="font-medium">AI Generate</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+                <button class="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 rounded-lg transition-colors">
+                    <div class="flex items-center">
+                        <i class="fas fa-hashtag text-orange-600 mr-3"></i>
+                        <span class="font-medium">Hashtag Research</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-400"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Platform Performance -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Platform Performance</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fab fa-twitter text-blue-400 mr-3"></i>
+                        <span class="font-medium">Twitter</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-medium text-gray-900">4.2K</div>
+                        <div class="text-xs text-green-600">+12%</div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fab fa-linkedin text-blue-600 mr-3"></i>
+                        <span class="font-medium">LinkedIn</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-medium text-gray-900">2.8K</div>
+                        <div class="text-xs text-green-600">+8%</div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fab fa-facebook text-blue-500 mr-3"></i>
+                        <span class="font-medium">Facebook</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-medium text-gray-900">1.9K</div>
+                        <div class="text-xs text-red-600">-3%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Schedule -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Upcoming Posts</h3>
+            <div class="space-y-3">
+                <div class="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
+                    <div class="w-2 h-2 bg-blue-600 rounded-full"></div>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-gray-900">Twitter post about AI trends</div>
+                        <div class="text-xs text-gray-600">Today at 2:00 PM</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
+                    <div class="w-2 h-2 bg-green-600 rounded-full"></div>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-gray-900">LinkedIn article</div>
+                        <div class="text-xs text-gray-600">Tomorrow at 9:00 AM</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
+                    <div class="w-2 h-2 bg-purple-600 rounded-full"></div>
+                    <div class="flex-1">
+                        <div class="text-sm font-medium text-gray-900">Facebook update</div>
+                        <div class="text-xs text-gray-600">Friday at 11:00 AM</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int totalPosts = 0;
+    private int scheduledPosts = 0;
+    private int activePlatforms = 3;
+    private List<ContentResponse>? recentContent;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            recentContent = await ContentService.GetRecentContentAsync(10);
+            totalPosts = recentContent?.Count ?? 0;
+            scheduledPosts = 5; // This would come from a scheduled posts service
+        }
+        catch (Exception)
+        {
+            // Log error
+            recentContent = new List<ContentResponse>();
+        }
+    }
+
+    private string GetStatusColor(string status) => status?.ToLower() switch
+    {
+        "published" => "text-green-600",
+        "draft" => "text-yellow-600",
+        "scheduled" => "text-blue-600",
+        "archived" => "text-gray-500",
+        _ => "text-gray-600"
+    };
+}

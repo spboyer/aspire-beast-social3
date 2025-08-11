@@ -1,0 +1,6 @@
+@SocialContentCreator.AnalyticsService_HostAddress = http://localhost:5048
+
+GET {{SocialContentCreator.AnalyticsService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

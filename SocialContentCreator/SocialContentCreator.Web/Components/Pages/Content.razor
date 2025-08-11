@@ -1,0 +1,414 @@
+@page "/content"
+@using SocialContentCreator.Web.Services
+@inject ContentManagementService ContentService
+@inject SocialMediaContentService SocialService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Create Content - Beast Social Creator</PageTitle>
+
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Create Social Media Content</h1>
+        <p class="text-gray-600 mt-2">Transform your content into engaging social media posts for multiple platforms.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Input Section -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Content Input Methods -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Content Input</h2>
+                
+                <!-- Tab Navigation -->
+                <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6">
+                    <button class="@GetTabClass("url")" @onclick='() => SetActiveTab("url")'>
+                        <i class="fas fa-link mr-2"></i>
+                        URL
+                    </button>
+                    <button class="@GetTabClass("text")" @onclick='() => SetActiveTab("text")'>
+                        <i class="fas fa-edit mr-2"></i>
+                        Text
+                    </button>
+                    <button class="@GetTabClass("document")" @onclick='() => SetActiveTab("document")'>
+                        <i class="fas fa-file-upload mr-2"></i>
+                        Document
+                    </button>
+                </div>
+
+                <!-- URL Input Tab -->
+                @if (activeTab == "url")
+                {
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Website URL</label>
+                            <div class="flex space-x-3">
+                                <input type="url" @bind="urlInput" @bind:event="oninput" 
+                                       class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                       placeholder="https://example.com/article">
+                                <button @onclick="ProcessUrl" disabled="@isProcessing" 
+                                        class="px-6 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors">
+                                    @if (isProcessing)
+                                    {
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>
+                                        <span>Processing...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-magic mr-2"></i>
+                                        <span>Process</span>
+                                    }
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2">Paste a URL to automatically extract content and generate social media posts.</p>
+                        </div>
+                    </div>
+                }
+
+                <!-- Text Input Tab -->
+                @if (activeTab == "text")
+                {
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Your Content</label>
+                            <textarea @bind="textInput" @bind:event="oninput" rows="8"
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                      placeholder="Paste your content here..."></textarea>
+                            <div class="flex justify-between items-center mt-2">
+                                <p class="text-sm text-gray-500">@(textInput?.Length ?? 0) characters</p>
+                                <button @onclick="ProcessText" disabled="@(isProcessing || string.IsNullOrWhiteSpace(textInput))" 
+                                        class="px-6 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors">
+                                    @if (isProcessing)
+                                    {
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>
+                                        <span>Processing...</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-magic mr-2"></i>
+                                        <span>Generate Posts</span>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Document Upload Tab -->
+                @if (activeTab == "document")
+                {
+                    <div class="space-y-4">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary-400 transition-colors">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Upload Document</h3>
+                            <p class="text-gray-600 mb-4">Drop your file here or click to browse</p>
+                            <button class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                                Choose File
+                            </button>
+                            <p class="text-sm text-gray-500 mt-2">Supports PDF, DOC, DOCX, TXT files up to 10MB</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Generated Content Preview -->
+            @if (generatedContent != null)
+            {
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-semibold text-gray-900">Generated Content</h2>
+                        <div class="flex space-x-2">
+                            <button class="px-4 py-2 text-primary-600 hover:bg-primary-50 border border-primary-200 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-edit mr-2"></i>
+                                Edit
+                            </button>
+                            <button class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors">
+                                <i class="fas fa-save mr-2"></i>
+                                Save
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="font-medium text-gray-900 mb-2">Title</h3>
+                            <p class="text-gray-700 bg-gray-50 p-3 rounded-lg">@generatedContent.Title</p>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900 mb-2">Summary</h3>
+                            <p class="text-gray-700 bg-gray-50 p-3 rounded-lg">@generatedContent.Summary</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Platform Selection -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Target Platforms</h3>
+                <div class="space-y-3">
+                    <label class="flex items-center">
+                        <input type="checkbox" @bind="platforms.Twitter" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                        <i class="fab fa-twitter text-blue-400 mx-3"></i>
+                        <span class="font-medium">Twitter</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" @bind="platforms.LinkedIn" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                        <i class="fab fa-linkedin text-blue-600 mx-3"></i>
+                        <span class="font-medium">LinkedIn</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" @bind="platforms.Facebook" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                        <i class="fab fa-facebook text-blue-500 mx-3"></i>
+                        <span class="font-medium">Facebook</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="checkbox" @bind="platforms.Instagram" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                        <i class="fab fa-instagram text-pink-500 mx-3"></i>
+                        <span class="font-medium">Instagram</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Content Settings -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Content Settings</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tone</label>
+                        <select @bind="selectedTone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                            <option value="professional">Professional</option>
+                            <option value="casual">Casual</option>
+                            <option value="enthusiastic">Enthusiastic</option>
+                            <option value="informative">Informative</option>
+                            <option value="conversational">Conversational</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Include Hashtags</label>
+                        <div class="flex items-center">
+                            <input type="checkbox" @bind="includeHashtags" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                            <span class="ml-2 text-sm text-gray-600">Auto-generate relevant hashtags</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Include Emoji</label>
+                        <div class="flex items-center">
+                            <input type="checkbox" @bind="includeEmoji" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                            <span class="ml-2 text-sm text-gray-600">Add relevant emojis to posts</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Content Length</span>
+                        <span class="font-medium">@((textInput?.Length ?? urlInput?.Length ?? 0).ToString("N0")) chars</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Estimated Posts</span>
+                        <span class="font-medium">@(GetSelectedPlatformCount())</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Processing Time</span>
+                        <span class="font-medium">~30 seconds</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generated Social Media Posts -->
+    @if (socialPosts?.Any() == true)
+    {
+        <div class="mt-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6">Generated Social Media Posts</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    @foreach (var post in socialPosts)
+                    {
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center">
+                                    <i class="@GetPlatformIcon(post.Platform) mr-2"></i>
+                                    <span class="font-medium">@post.Platform</span>
+                                </div>
+                                <span class="text-sm text-gray-500">@post.CharacterCount chars</span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg mb-3">
+                                <p class="text-gray-800">@post.Content</p>
+                            </div>
+                            @if (!string.IsNullOrEmpty(post.Hashtags))
+                            {
+                                <div class="mb-3">
+                                    <p class="text-sm text-blue-600">@post.Hashtags</p>
+                                </div>
+                            }
+                            <div class="flex space-x-2">
+                                <button class="flex-1 px-3 py-2 text-primary-600 hover:bg-primary-50 border border-primary-200 rounded-lg text-sm font-medium transition-colors">
+                                    <i class="fas fa-edit mr-1"></i>
+                                    Edit
+                                </button>
+                                <button class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
+                                    <i class="fas fa-share mr-1"></i>
+                                    Post
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string activeTab = "url";
+    private string urlInput = "";
+    private string textInput = "";
+    private bool isProcessing = false;
+    private ContentResponse? generatedContent;
+    private List<SocialMediaPostResponse>? socialPosts;
+
+    // Platform selection
+    private PlatformSelection platforms = new()
+    {
+        Twitter = true,
+        LinkedIn = true,
+        Facebook = false,
+        Instagram = false
+    };
+
+    // Content settings
+    private string selectedTone = "professional";
+    private bool includeHashtags = true;
+    private bool includeEmoji = false;
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+        ClearResults();
+    }
+
+    private string GetTabClass(string tab)
+    {
+        return tab == activeTab 
+            ? "flex-1 py-2 px-4 text-center font-medium text-primary-600 bg-white rounded-md shadow-sm transition-colors"
+            : "flex-1 py-2 px-4 text-center font-medium text-gray-600 hover:text-gray-900 transition-colors";
+    }
+
+    private async Task ProcessUrl()
+    {
+        if (string.IsNullOrWhiteSpace(urlInput))
+            return;
+
+        isProcessing = true;
+        try
+        {
+            generatedContent = await ContentService.ProcessUrlAsync(urlInput, "user123");
+            if (generatedContent != null)
+            {
+                await GenerateSocialPosts();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Show error message
+            await JSRuntime.InvokeVoidAsync("alert", $"Error processing URL: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task ProcessText()
+    {
+        if (string.IsNullOrWhiteSpace(textInput))
+            return;
+
+        isProcessing = true;
+        try
+        {
+            generatedContent = await ContentService.ProcessTextAsync(textInput, "user123");
+            if (generatedContent != null)
+            {
+                await GenerateSocialPosts();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Show error message
+            await JSRuntime.InvokeVoidAsync("alert", $"Error processing text: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task GenerateSocialPosts()
+    {
+        if (generatedContent == null) return;
+
+        try
+        {
+            var selectedPlatforms = GetSelectedPlatforms();
+            socialPosts = await SocialService.GenerateOptimizedPostsAsync(
+                generatedContent.Id, 
+                selectedPlatforms, 
+                selectedTone, 
+                includeHashtags, 
+                includeEmoji);
+        }
+        catch (Exception ex)
+        {
+            // Show error message
+            await JSRuntime.InvokeVoidAsync("alert", $"Error generating social posts: {ex.Message}");
+        }
+    }
+
+    private void ClearResults()
+    {
+        generatedContent = null;
+        socialPosts = null;
+    }
+
+    private List<string> GetSelectedPlatforms()
+    {
+        var selected = new List<string>();
+        if (platforms.Twitter) selected.Add("Twitter");
+        if (platforms.LinkedIn) selected.Add("LinkedIn");
+        if (platforms.Facebook) selected.Add("Facebook");
+        if (platforms.Instagram) selected.Add("Instagram");
+        return selected;
+    }
+
+    private int GetSelectedPlatformCount()
+    {
+        return GetSelectedPlatforms().Count;
+    }
+
+    private string GetPlatformIcon(string platform) => platform?.ToLower() switch
+    {
+        "twitter" => "fab fa-twitter text-blue-400",
+        "linkedin" => "fab fa-linkedin text-blue-600",
+        "facebook" => "fab fa-facebook text-blue-500",
+        "instagram" => "fab fa-instagram text-pink-500",
+        _ => "fas fa-share-alt text-gray-600"
+    };
+
+    public class PlatformSelection
+    {
+        public bool Twitter { get; set; }
+        public bool LinkedIn { get; set; }
+        public bool Facebook { get; set; }
+        public bool Instagram { get; set; }
+    }
+}
