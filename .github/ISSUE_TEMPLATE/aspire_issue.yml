@@ -1,0 +1,104 @@
+name: 🔧 .NET Aspire Issue
+description: Report an issue specific to .NET Aspire integration or patterns
+title: "[ASPIRE] "
+labels: ["aspire", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This template is for issues specifically related to .NET Aspire integration, orchestration, or development patterns.
+
+  - type: input
+    id: aspire-version
+    attributes:
+      label: .NET Aspire Version
+      description: What version of .NET Aspire are you using?
+      placeholder: "9.4.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: aspire-component
+    attributes:
+      label: Aspire Component
+      description: Which .NET Aspire component is involved?
+      options:
+        - AppHost Orchestration
+        - Service Discovery
+        - Health Checks
+        - Service Defaults
+        - Azure Integrations
+        - Container Management
+        - Dashboard
+        - Telemetry/Monitoring
+        - Configuration
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue-description
+    attributes:
+      label: Issue Description
+      description: Describe the .NET Aspire specific issue you're experiencing
+      placeholder: Detailed description of the Aspire-related issue...
+    validations:
+      required: true
+
+  - type: textarea
+    id: apphost-config
+    attributes:
+      label: AppHost Configuration
+      description: Share your AppHost configuration (remove sensitive information)
+      render: csharp
+      placeholder: |
+        var builder = DistributedApplication.CreateBuilder(args);
+        
+        var database = builder.AddPostgres("postgres")
+            .WithDataVolume()
+            .AddDatabase("db");
+            
+        var api = builder.AddProject<Projects.ApiService>("api")
+            .WithReference(database);
+
+  - type: textarea
+    id: expected-aspire
+    attributes:
+      label: Expected Aspire Behavior
+      description: What did you expect .NET Aspire to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-aspire
+    attributes:
+      label: Actual Aspire Behavior
+      description: What actually happened with .NET Aspire?
+    validations:
+      required: true
+
+  - type: textarea
+    id: aspire-logs
+    attributes:
+      label: Aspire Logs/Output
+      description: Include relevant .NET Aspire logs or dashboard output
+      render: text
+
+  - type: checkboxes
+    id: attempted-solutions
+    attributes:
+      label: Attempted Solutions
+      description: What have you tried to resolve this issue?
+      options:
+        - label: Restarted the AppHost
+        - label: Cleared Docker containers/images
+        - label: Updated .NET Aspire packages
+        - label: Checked service health endpoints
+        - label: Reviewed Aspire Dashboard
+        - label: Consulted .NET Aspire documentation
+
+  - type: textarea
+    id: additional-aspire
+    attributes:
+      label: Additional Context
+      description: Any additional context about the .NET Aspire issue
